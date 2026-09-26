@@ -19,6 +19,8 @@
     const radius = parseFloat(root.dataset.hoverRadius || '180');
     const maxTilt = parseFloat(root.dataset.maxTilt || '7');
 
+    root.style.setProperty('--wya-pivot-x', `${pivotX}%`);
+    root.style.setProperty('--wya-pivot-y', `${pivotY}%`);
     mediaWrap.style.transformOrigin = `${pivotX}% ${pivotY}%`;
 
     const motionItems = items.map((item) => ({
@@ -69,9 +71,7 @@
       const dist = Math.hypot(dx, dy);
       const strength = clamp(1 - dist / radius, 0, 1);
       const tilt = clamp((dx / Math.max(rect.width, 1)) * maxTilt * 2.6 * strength, -maxTilt, maxTilt);
-      const lift = clamp((dy / Math.max(rect.height, 1)) * maxTilt * 2.6 * strength, -maxTilt, maxTilt);
-
-      mediaWrap.style.transform = `rotate(${tilt.toFixed(2)}deg) translate(${(-lift * 0.45).toFixed(2)}px, ${(lift * 0.25).toFixed(2)}px)`;
+      mediaWrap.style.setProperty('--wya-tilt', `${tilt.toFixed(2)}deg`);
       root.style.setProperty('--wya-pointer-x', `${clientX - rect.left}px`);
       root.style.setProperty('--wya-pointer-y', `${clientY - rect.top}px`);
     }
@@ -101,7 +101,7 @@
       items.forEach((item) => item.classList.remove('is-focused'));
       if (active) active.classList.remove('is-previewing');
       active = null;
-      mediaWrap.style.transform = '';
+      mediaWrap.style.setProperty('--wya-tilt', '0deg');
       status.textContent = '';
     }
 
