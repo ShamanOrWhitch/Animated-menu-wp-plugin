@@ -2,14 +2,14 @@
 /**
  * Plugin Name: WalkingYog Animated Space Menu
  * Description: Spatial animated WordPress menu with GIF/MP4 central media, calibrated face pivot, internal/external links and pointer/touch interaction.
- * Version: 0.2.0
+ * Version: 0.2.1
  * Author: WalkingYog
  * Text Domain: walkingyog-animated-menu
  */
 
 defined('ABSPATH') || exit;
 
-define('WYA_MENU_VERSION', '0.2.0');
+define('WYA_MENU_VERSION', '0.2.1');
 define('WYA_MENU_FILE', __FILE__);
 define('WYA_MENU_URL', plugin_dir_url(__FILE__));
 define('WYA_MENU_PATH', plugin_dir_path(__FILE__));
