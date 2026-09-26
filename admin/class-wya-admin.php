@@ -76,10 +76,24 @@ final class WYA_Admin {
                 'enabled' => !isset($item['enabled']) || !empty($item['enabled']) ? 1 : 0,
                 'x' => max(-50, min(50, (float) ($item['x'] ?? 0))),
                 'y' => max(-50, min(50, (float) ($item['y'] ?? 0))),
-                'z' => max(-50, min(50, (float) ($item['z'] ?? 0))),
+                'z' => max(-300, min(300, (float) ($item['z'] ?? 0))),
+                'orbit_radius' => max(0, min(50, (float) ($item['orbit_radius'] ?? 0))),
+                'orbit_angle' => max(-360, min(360, (float) ($item['orbit_angle'] ?? 0))),
+                'orbit_speed' => max(0, min(2, (float) ($item['orbit_speed'] ?? 0))),
+                'orbit_amplitude' => max(0, min(50, (float) ($item['orbit_amplitude'] ?? 0))),
+                'phase' => max(-360, min(360, (float) ($item['phase'] ?? 0))),
+                'scale' => max(0.5, min(3, (float) ($item['scale'] ?? 1))),
             ];
         }
         return $out;
+    }
+
+    private static function field(string $name, $value, string $type = 'text', array $attrs = []): string {
+        $attr = '';
+        foreach ($attrs as $key => $val) {
+            $attr .= ' ' . esc_attr($key) . '="' . esc_attr($val) . '"';
+        }
+        return '<input type="' . esc_attr($type) . '" name="' . esc_attr($name) . '" value="' . esc_attr($value) . '"' . $attr . '>';
     }
 
     public static function page(): void {
@@ -88,44 +102,76 @@ final class WYA_Admin {
         ?>
         <div class="wrap wya-admin">
             <h1>WalkingYog Animated Menu</h1>
-            <p>Шорткод: <code>[wyg_animated_menu]</code>. Центральный media-файл может быть GIF или MP4. Pivot — точка, вокруг которой голова/объект реагирует на направление меню.</p>
+            <p><strong>Шорткод:</strong> <code>[wyg_animated_menu]</code>. Сначала задаём центральную голову, затем добавляем летающие пункты и их ссылки.</p>
             <form method="post" action="options.php">
                 <?php settings_fields('wya_menu'); ?>
+
                 <h2>Центральный объект</h2>
                 <table class="form-table" role="presentation">
-                    <tr><th>GIF / MP4 URL</th><td><input class="regular-text" name="wya_menu_settings[media][url]" value="<?php echo esc_attr($s['media']['url']); ?>"></td></tr>
+                    <tr><th>GIF / MP4</th><td>
+                        <div class="wya-media-control">
+                            <input class="regular-text wya-media-url" name="wya_menu_settings[media][url]" value="<?php echo esc_attr($s['media']['url']); ?>">
+                            <button type="button" class="button wya-media-pick" data-target="wya_menu_settings[media][url]">Выбрать из медиатеки</button>
+                        </div>
+                    </td></tr>
                     <tr><th>Тип</th><td><select name="wya_menu_settings[media][type]"><option value="gif" <?php selected($s['media']['type'],'gif'); ?>>GIF</option><option value="mp4" <?php selected($s['media']['type'],'mp4'); ?>>MP4</option></select></td></tr>
-                    <tr><th>Pivot X</th><td><input type="number" min="0" max="100" step="0.1" name="wya_menu_settings[media][pivot_x]" value="<?php echo esc_attr($s['media']['pivot_x']); ?>"> % по ширине</td></tr>
-                    <tr><th>Pivot Y</th><td><input type="number" min="0" max="100" step="0.1" name="wya_menu_settings[media][pivot_y]" value="<?php echo esc_attr($s['media']['pivot_y']); ?>"> % по высоте</td></tr>
-                    <tr><th>Радиус реакции</th><td><input type="number" min="40" max="600" step="1" name="wya_menu_settings[interaction][hover_radius]" value="<?php echo esc_attr($s['interaction']['hover_radius']); ?>"> px</td></tr>
-                    <tr><th>Макс. наклон</th><td><input type="number" min="0" max="20" step="0.1" name="wya_menu_settings[interaction][max_tilt]" value="<?php echo esc_attr($s['interaction']['max_tilt']); ?>"> °</td></tr>
+                    <tr><th>Pivot X</th><td><?php echo self::field('wya_menu_settings[media][pivot_x]', $s['media']['pivot_x'], 'number', ['min'=>0,'max'=>100,'step'=>'0.1']); ?> %</td></tr>
+                    <tr><th>Pivot Y</th><td><?php echo self::field('wya_menu_settings[media][pivot_y]', $s['media']['pivot_y'], 'number', ['min'=>0,'max'=>100,'step'=>'0.1']); ?> %</td></tr>
+                    <tr><th>Радиус реакции</th><td><?php echo self::field('wya_menu_settings[interaction][hover_radius]', $s['interaction']['hover_radius'], 'number', ['min'=>40,'max'=>600,'step'=>'1']); ?> px</td></tr>
+                    <tr><th>Макс. наклон</th><td><?php echo self::field('wya_menu_settings[interaction][max_tilt]', $s['interaction']['max_tilt'], 'number', ['min'=>0,'max'=>20,'step'=>'0.1']); ?> °</td></tr>
                 </table>
 
-                <h2>Пункты меню</h2>
-                <p>Для каждого пункта можно указать внутреннюю или внешнюю ссылку и собственный preview. Координаты — проценты относительно сцены; Z отвечает за глубину.</p>
-                <table class="widefat striped">
-                    <thead><tr><th>Название</th><th>URL</th><th>Preview</th><th>X</th><th>Y</th><th>Z</th><th>Внешняя</th><th>Новое окно</th><th>Активен</th></tr></thead>
-                    <tbody>
-                    <?php foreach ($s['items'] as $i => $item): ?>
-                        <tr>
-                            <td><input name="wya_menu_settings[items][<?php echo $i; ?>][title]" value="<?php echo esc_attr($item['title']); ?>"></td>
-                            <td><input size="28" name="wya_menu_settings[items][<?php echo $i; ?>][url]" value="<?php echo esc_attr($item['url']); ?>"></td>
-                            <td><input size="24" name="wya_menu_settings[items][<?php echo $i; ?>][preview]" value="<?php echo esc_attr($item['preview']); ?>"></td>
-                            <td><input type="number" step="0.1" name="wya_menu_settings[items][<?php echo $i; ?>][x]" value="<?php echo esc_attr($item['x']); ?>"></td>
-                            <td><input type="number" step="0.1" name="wya_menu_settings[items][<?php echo $i; ?>][y]" value="<?php echo esc_attr($item['y']); ?>"></td>
-                            <td><input type="number" step="0.1" name="wya_menu_settings[items][<?php echo $i; ?>][z]" value="<?php echo esc_attr($item['z']); ?>"></td>
-                            <td><input type="checkbox" name="wya_menu_settings[items][<?php echo $i; ?>][external]" value="1" <?php checked($item['external'],1); ?>></td>
-                            <td><input type="checkbox" name="wya_menu_settings[items][<?php echo $i; ?>][new_tab]" value="1" <?php checked($item['new_tab'],1); ?>></td>
-                            <td><input type="checkbox" name="wya_menu_settings[items][<?php echo $i; ?>][enabled]" value="1" <?php checked($item['enabled'],1); ?>></td>
-                        </tr>
-                    <?php endforeach; ?>
-                    <tr class="wya-template-row">
-                        <td colspan="9"><em>Для первого MVP добавь пункты через импорт JSON из docs/example-menu.json; GUI-repeater будет следующим шагом.</em></td>
-                    </tr>
-                    </tbody>
-                </table>
+                <h2>Летающие пункты</h2>
+                <p>У каждого пункта есть <strong>ссылка</strong> и отдельные параметры полёта. X/Y/Z — стартовая позиция, радиус/угол/скорость/амплитуда — движение вокруг неё.</p>
+                <div id="wya-items" class="wya-items">
+                    <?php foreach ($s['items'] as $i => $item): self::render_item($i, $item); endforeach; ?>
+                </div>
+                <p><button type="button" class="button button-secondary" id="wya-add-item">+ Добавить летающий пункт</button></p>
+                <p class="description">Можно использовать внутренний URL WordPress или внешний URL. Для внешней ссылки включи «Внешняя»; «Новое окно» добавляет target=_blank.</p>
+
                 <?php submit_button('Сохранить меню'); ?>
             </form>
+        </div>
+        <script type="text/html" id="tmpl-wya-item">
+            <?php self::render_item('__INDEX__', [
+                'title'=>'','url'=>'','description'=>'','icon'=>'','preview'=>'','external'=>0,'new_tab'=>0,'enabled'=>1,
+                'x'=>0,'y'=>0,'z'=>0,'orbit_radius'=>0,'orbit_angle'=>0,'orbit_speed'=>0,'orbit_amplitude'=>0,'phase'=>0,'scale'=>1,
+            ], false); ?>
+        </script>
+        <?php
+    }
+
+    private static function render_item($i, array $item, bool $numbered = true): void {
+        $p = 'wya_menu_settings[items][' . $i . ']';
+        ?>
+        <div class="wya-item" data-index="<?php echo esc_attr($i); ?>">
+            <div class="wya-item__head"><strong>Пункт <span class="wya-item-number"><?php echo $numbered ? (int)$i + 1 : '__NUMBER__'; ?></span></strong><button type="button" class="button-link-delete wya-remove-item">Удалить</button></div>
+            <div class="wya-grid">
+                <label>Название<?php echo self::field($p.'[title]', $item['title']); ?></label>
+                <label class="wya-wide">URL / ссылка<?php echo self::field($p.'[url]', $item['url'], 'url', ['placeholder'=>'/creative-lab/ или https://example.com']); ?></label>
+                <label>Описание<?php echo self::field($p.'[description]', $item['description']); ?></label>
+                <label>Иконка<?php echo self::field($p.'[icon]', $item['icon'], 'url'); ?><button type="button" class="button wya-media-pick" data-target="<?php echo esc_attr($p.'[icon]'); ?>">Медиа</button></label>
+                <label>Preview<?php echo self::field($p.'[preview]', $item['preview'], 'url'); ?><button type="button" class="button wya-media-pick" data-target="<?php echo esc_attr($p.'[preview]'); ?>">Медиа</button></label>
+            </div>
+            <details>
+                <summary>Положение и полёт</summary>
+                <div class="wya-grid wya-motion">
+                    <label>X<?php echo self::field($p.'[x]', $item['x'], 'number', ['min'=>-50,'max'=>50,'step'=>'0.1']); ?> %</label>
+                    <label>Y<?php echo self::field($p.'[y]', $item['y'], 'number', ['min'=>-50,'max'=>50,'step'=>'0.1']); ?> %</label>
+                    <label>Z<?php echo self::field($p.'[z]', $item['z'], 'number', ['min'=>-300,'max'=>300,'step'=>'1']); ?> px</label>
+                    <label>Радиус<?php echo self::field($p.'[orbit_radius]', $item['orbit_radius'], 'number', ['min'=>0,'max'=>50,'step'=>'0.1']); ?> %</label>
+                    <label>Угол<?php echo self::field($p.'[orbit_angle]', $item['orbit_angle'], 'number', ['min'=>-360,'max'=>360,'step'=>'1']); ?> °</label>
+                    <label>Скорость<?php echo self::field($p.'[orbit_speed]', $item['orbit_speed'], 'number', ['min'=>0,'max'=>2,'step'=>'0.01']); ?> обор./сек.</label>
+                    <label>Амплитуда<?php echo self::field($p.'[orbit_amplitude]', $item['orbit_amplitude'], 'number', ['min'=>0,'max'=>50,'step'=>'0.1']); ?> %</label>
+                    <label>Фаза<?php echo self::field($p.'[phase]', $item['phase'], 'number', ['min'=>-360,'max'=>360,'step'=>'1']); ?> °</label>
+                    <label>Масштаб<?php echo self::field($p.'[scale]', $item['scale'], 'number', ['min'=>0.5,'max'=>3,'step'=>'0.05']); ?> ×</label>
+                </div>
+            </details>
+            <div class="wya-checks">
+                <label><input type="checkbox" name="<?php echo esc_attr($p.'[external]'); ?>" value="1" <?php checked(!empty($item['external'])); ?>> Внешняя ссылка</label>
+                <label><input type="checkbox" name="<?php echo esc_attr($p.'[new_tab]'); ?>" value="1" <?php checked(!empty($item['new_tab'])); ?>> Новое окно</label>
+                <label><input type="checkbox" name="<?php echo esc_attr($p.'[enabled]'); ?>" value="1" <?php checked(isset($item['enabled']) ? $item['enabled'] : 1); ?>> Активен</label>
+            </div>
         </div>
         <?php
     }
