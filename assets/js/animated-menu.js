@@ -89,7 +89,12 @@
 
     function sceneMetrics() {
       const mobile = window.matchMedia('(max-width:900px)').matches;
-      root.style.setProperty('--wya-head-size',(parseFloat(root.dataset[mobile?'headMobile':'headDesktop'])||145)+'px');
+      const wanted = parseFloat(root.dataset[mobile ? 'headMobile' : 'headDesktop']) || 145;
+      const availableWidth = Math.max(80, stage.clientWidth * 0.50);
+      const availableHeight = Math.max(80, stage.clientHeight * 0.72);
+      const actual = Math.min(wanted, availableWidth, availableHeight);
+
+      root.style.setProperty('--wya-head-size', actual.toFixed(1) + 'px');
       root.style.setProperty('--wya-stage-height','100%');
     }
 
