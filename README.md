@@ -4,7 +4,7 @@ Standalone WordPress plugin for an animated spatial menu around a central GIF/MP
 
 ## Current version
 
-0.2.1
+0.3.0
 
 ## Included in 0.2.0
 
@@ -31,6 +31,10 @@ Standalone WordPress plugin for an animated spatial menu around a central GIF/MP
 Copy the plugin folder into wp-content/plugins/WalkingYog-Animated-Menu/ and activate it in WordPress. Configure it under Settings → WalkingYog Animated Menu, then insert [wyg_animated_menu].
 
 When nothing is configured, the shortcode outputs nothing so it does not place setup text over the existing page.
+
+## Research basis
+
+The radial layout follows established radial/orbit UI patterns rather than manual free positioning. See docs/research.md.
 
 ## Planned
 
