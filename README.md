@@ -4,7 +4,7 @@ Standalone WordPress plugin for an animated spatial menu around a central GIF/MP
 
 ## Current version
 
-0.2.0
+0.2.1
 
 ## Included in 0.2.0
 
@@ -23,6 +23,8 @@ Standalone WordPress plugin for an animated spatial menu around a central GIF/MP
 - Desktop pointer interaction
 - Mobile first-touch focus / second-tap activation baseline
 - Real HTML links as the fallback/navigation layer
+- Circular central-object mask with contain rendering
+- Pointer tilt rotates around the configured pivot without translating the head off-screen
 
 ## Install
 
