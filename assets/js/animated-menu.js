@@ -1,146 +1,169 @@
-(function () {
+(function(){
   'use strict';
 
-  function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
-  }
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
 
-  function init(root) {
-    if (!root || root.dataset.wyaReady === '1') return;
-    root.dataset.wyaReady = '1';
+  function init(root){
+    if(!root || root.dataset.wyaReady==='1') return;
+    root.dataset.wyaReady='1';
 
-    const stage = root.querySelector('.wya-menu__stage');
-    const media = root.querySelector('.wya-menu__media');
-    const mediaWrap = root.querySelector('.wya-menu__media-wrap');
-    const status = root.querySelector('.wya-menu__sr-status');
-    const items = Array.from(root.querySelectorAll('.wya-menu__item'));
-    const pivotX = parseFloat(root.dataset.pivotX || '50');
-    const pivotY = parseFloat(root.dataset.pivotY || '50');
-    const radius = parseFloat(root.dataset.hoverRadius || '180');
-    const maxTilt = parseFloat(root.dataset.maxTilt || '7');
+    const stage=root.querySelector('.wya-menu__stage');
+    const media=root.querySelector('.wya-menu__media');
+    const wrap=root.querySelector('.wya-menu__media-wrap');
+    const items=Array.from(root.querySelectorAll('.wya-menu__item'));
+    const status=root.querySelector('.wya-menu__sr-status');
 
-    root.style.setProperty('--wya-pivot-x', `${pivotX}%`);
-    root.style.setProperty('--wya-pivot-y', `${pivotY}%`);
-    mediaWrap.style.transformOrigin = `${pivotX}% ${pivotY}%`;
+    const pivotX=parseFloat(root.dataset.pivotX||'50');
+    const pivotY=parseFloat(root.dataset.pivotY||'50');
+    const desktopRadius=parseFloat(root.dataset.radiusDesktop||'300');
+    const mobileRadius=parseFloat(root.dataset.radiusMobile||'175');
+    const ellipseY=parseFloat(root.dataset.ellipseY||'0.72');
+    const ringGap=parseFloat(root.dataset.ringGap||'105');
+    const labelSize=parseFloat(root.dataset.labelSize||'14');
+    const labelWidth=parseFloat(root.dataset.labelWidth||'150');
+    const maxYaw=parseFloat(root.dataset.maxYaw||'10');
+    const maxPitch=parseFloat(root.dataset.maxPitch||'6');
+    const smoothing=parseFloat(root.dataset.lookatSmoothing||'0.16');
 
-    const motionItems = items.map((item) => ({
-      item,
-      x: parseFloat(item.dataset.x || '0'),
-      y: parseFloat(item.dataset.y || '0'),
-      z: parseFloat(item.dataset.z || '0'),
-      orbitRadius: parseFloat(item.dataset.orbitRadius || '0'),
-      orbitAngle: parseFloat(item.dataset.orbitAngle || '0'),
-      orbitSpeed: parseFloat(item.dataset.orbitSpeed || '0'),
-      amplitude: parseFloat(item.dataset.orbitAmplitude || '0'),
-      phase: parseFloat(item.dataset.phase || '0'),
-      scale: parseFloat(item.dataset.scale || '1')
-    }));
+    root.style.setProperty('--wya-pivot-x',pivotX+'%');
+    root.style.setProperty('--wya-pivot-y',pivotY+'%');
+    root.style.setProperty('--wya-label-size',labelSize+'px');
+    root.style.setProperty('--wya-label-width',labelWidth+'px');
+    wrap.style.transformOrigin=pivotX+'% '+pivotY+'%';
 
-    motionItems.forEach(({ item, x, y, z, scale }) => {
-      item.style.setProperty('--wya-x', `${x}%`);
-      item.style.setProperty('--wya-y', `${y}%`);
-      item.style.setProperty('--wya-z', `${z}px`);
-      item.style.setProperty('--wya-scale', scale);
+    const groups=new Map();
+    items.sort((a,b)=>{
+      const ra=parseInt(a.dataset.ring||'0')-parseInt(b.dataset.ring||'0');
+      return ra || (parseInt(a.dataset.order||'0')-parseInt(b.dataset.order||'0'));
+    }).forEach(item=>{
+      const ring=Math.max(0,parseInt(item.dataset.ring||'0'));
+      if(!groups.has(ring)) groups.set(ring,[]);
+      groups.get(ring).push(item);
     });
 
-    let active = null;
-    let lastTouchTime = 0;
-    let startTime = performance.now();
-    let raf = 0;
+    let targetYaw=0,targetPitch=0,currentYaw=0,currentPitch=0;
+    let active=null;
 
-    function animate(now) {
-      const elapsed = (now - startTime) / 1000;
-      motionItems.forEach((m) => {
-        const a = (m.orbitAngle + m.phase) * Math.PI / 180 + elapsed * m.orbitSpeed * Math.PI * 2;
-        const ox = Math.cos(a) * m.orbitRadius;
-        const oy = Math.sin(a) * m.orbitRadius;
-        const bob = m.amplitude ? Math.sin(a * 2) * m.amplitude : 0;
-        m.item.style.setProperty('--wya-x', `${(m.x + ox).toFixed(3)}%`);
-        m.item.style.setProperty('--wya-y', `${(m.y + oy + bob).toFixed(3)}%`);
+    function getRadius(){
+      return window.matchMedia('(max-width:900px)').matches ? mobileRadius : desktopRadius;
+    }
+
+    function layout(){
+      const radius=getRadius();
+      const ringEntries=[...groups.entries()].sort((a,b)=>a[0]-b[0]);
+      const totalRings=Math.max(1,ringEntries.length);
+
+      ringEntries.forEach(([ring,group])=>{
+        const ringRadius=radius + ring*ringGap;
+        const step=(Math.PI*2)/Math.max(group.length,1);
+        const offset=(ring%2 ? step/2 : 0) - Math.PI/2;
+
+        group.forEach((item,index)=>{
+          const a=offset+step*index;
+          let x=Math.cos(a)*ringRadius;
+          let y=Math.sin(a)*ringRadius*ellipseY;
+          item.style.setProperty('--wya-x',x.toFixed(2)+'px');
+          item.style.setProperty('--wya-y',y.toFixed(2)+'px');
+          item.style.setProperty('--wya-z',(ring*18).toFixed(2)+'px');
+          item.style.setProperty('--wya-scale',ring===0?'1':'0.96');
+        });
       });
-      raf = requestAnimationFrame(animate);
-    }
-    raf = requestAnimationFrame(animate);
 
-    function aimAt(clientX, clientY) {
-      const rect = stage.getBoundingClientRect();
-      const cx = rect.left + rect.width * (pivotX / 100);
-      const cy = rect.top + rect.height * (pivotY / 100);
-      const dx = clientX - cx;
-      const dy = clientY - cy;
-      const dist = Math.hypot(dx, dy);
-      const strength = clamp(1 - dist / radius, 0, 1);
-      const tilt = clamp((dx / Math.max(rect.width, 1)) * maxTilt * 2.6 * strength, -maxTilt, maxTilt);
-      mediaWrap.style.setProperty('--wya-tilt', `${tilt.toFixed(2)}deg`);
-      root.style.setProperty('--wya-pointer-x', `${clientX - rect.left}px`);
-      root.style.setProperty('--wya-pointer-y', `${clientY - rect.top}px`);
-    }
-
-    function focusItem(item, pointerEvent) {
-      if (!item) return;
-      if (active && active !== item) active.classList.remove('is-focused', 'is-previewing');
-      active = item;
-      aimAt(pointerEvent.clientX, pointerEvent.clientY);
-      item.classList.add('is-focused');
-      status.textContent = item.querySelector('.wya-menu__item-title')?.textContent || '';
-
-      const preview = item.dataset.preview;
-      if (preview && media && media.tagName === 'VIDEO') {
-        media.dataset.baseSrc ||= media.currentSrc || media.src;
-        if (media.src !== preview) {
-          media.pause();
-          media.src = preview;
-          media.load();
-          media.play().catch(() => {});
-        }
-        item.classList.add('is-previewing');
-      }
-    }
-
-    function clearFocus() {
-      items.forEach((item) => item.classList.remove('is-focused'));
-      if (active) active.classList.remove('is-previewing');
-      active = null;
-      mediaWrap.style.setProperty('--wya-tilt', '0deg');
-      status.textContent = '';
-    }
-
-    root.addEventListener('pointermove', (event) => {
-      let closest = null;
-      let closestDistance = Infinity;
-      items.forEach((item) => {
-        const ir = item.getBoundingClientRect();
-        const ix = ir.left + ir.width / 2;
-        const iy = ir.top + ir.height / 2;
-        const d = Math.hypot(event.clientX - ix, event.clientY - iy);
-        if (d < closestDistance) {
-          closestDistance = d;
-          closest = item;
+      // One extra pass: if anchors still collide, push the affected ring outward.
+      ringEntries.forEach(([ring,group])=>{
+        if(group.length<2) return;
+        let collided=true, tries=0;
+        while(collided && tries<5){
+          collided=false; tries++;
+          const rects=group.map(x=>x.getBoundingClientRect());
+          outer: for(let i=0;i<rects.length;i++){
+            for(let j=i+1;j<rects.length;j++){
+              const a=rects[i],b=rects[j];
+              const overlap=!(a.right+8<b.left || a.left>b.right+8 || a.bottom+8<b.top || a.top>b.bottom+8);
+              if(overlap){
+                collided=true;
+                const scale=1.12;
+                group.forEach(item=>{
+                  const x=parseFloat(getComputedStyle(item).getPropertyValue('--wya-x'))||0;
+                  const y=parseFloat(getComputedStyle(item).getPropertyValue('--wya-y'))||0;
+                  item.style.setProperty('--wya-x',(x*scale).toFixed(2)+'px');
+                  item.style.setProperty('--wya-y',(y*scale).toFixed(2)+'px');
+                });
+                break outer;
+              }
+            }
+          }
         }
       });
-      if (closest && closestDistance <= radius * 0.9) {
-        focusItem(closest, event);
-      } else if (event.pointerType === 'mouse') {
-        clearFocus();
-      }
-    });
+    }
 
-    root.addEventListener('pointerleave', (event) => {
-      if (event.pointerType === 'mouse') clearFocus();
-    });
+    function setLookAt(item){
+      const rect=stage.getBoundingClientRect();
+      const itemRect=item.getBoundingClientRect();
+      const pivot={
+        x:rect.left + rect.width*(pivotX/100),
+        y:rect.top + rect.height*(pivotY/100)
+      };
+      const target={
+        x:itemRect.left+itemRect.width/2,
+        y:itemRect.top+itemRect.height/2
+      };
+      const dx=target.x-pivot.x;
+      const dy=target.y-pivot.y;
+      const halfW=Math.max(rect.width*0.5,1);
+      const halfH=Math.max(rect.height*0.5,1);
+      targetYaw=clamp((dx/halfW)*maxYaw,-maxYaw,maxYaw);
+      targetPitch=clamp((dy/halfH)*maxPitch,-maxPitch,maxPitch);
+    }
 
-    items.forEach((item) => {
-      item.addEventListener('pointerdown', (event) => {
-        if (event.pointerType !== 'touch') return;
-        const now = Date.now();
-        const isSecondTap = active === item && (now - lastTouchTime) < 850;
-        lastTouchTime = now;
-        focusItem(item, event);
-        if (!isSecondTap) event.preventDefault();
+    function clearLook(){
+      targetYaw=0; targetPitch=0;
+      if(active) active.classList.remove('is-focused');
+      active=null;
+      status.textContent='';
+    }
+
+    function frame(){
+      currentYaw += (targetYaw-currentYaw)*smoothing;
+      currentPitch += (targetPitch-currentPitch)*smoothing;
+      wrap.style.setProperty('--wya-yaw',currentYaw.toFixed(2)+'deg');
+      wrap.style.setProperty('--wya-pitch',(-currentPitch).toFixed(2)+'deg');
+      requestAnimationFrame(frame);
+    }
+
+    items.forEach(item=>{
+      item.addEventListener('pointerenter',(event)=>{
+        active=item;
+        items.forEach(other=>{ if(other!==item) other.classList.remove('is-focused'); });
+        item.classList.add('is-focused');
+        setLookAt(item);
+        const title=item.querySelector('.wya-menu__item-title');
+        status.textContent=title?title.textContent:'';
+      });
+
+      item.addEventListener('focusin',()=>{ setLookAt(item); item.classList.add('is-focused'); });
+      item.addEventListener('pointerleave',()=>{ if(active===item) clearLook(); });
+
+      item.addEventListener('pointerdown',(event)=>{
+        if(event.pointerType==='touch'){
+          const now=Date.now();
+          const secondTap=active===item && item.dataset.lastTap && now-parseInt(item.dataset.lastTap,10)<850;
+          item.dataset.lastTap=String(now);
+          if(!secondTap) event.preventDefault();
+          active=item;
+          item.classList.add('is-focused');
+          setLookAt(item);
+        }
       });
     });
 
-    root.addEventListener('remove', () => cancelAnimationFrame(raf));
+    root.addEventListener('pointerleave',(event)=>{
+      if(event.pointerType==='mouse') clearLook();
+    });
+
+    window.addEventListener('resize',layout,{passive:true});
+    layout();
+    frame();
   }
 
   document.querySelectorAll('.wya-menu').forEach(init);
