@@ -80,24 +80,42 @@
     Array.from(rings.entries()).forEach(function(entry){
       const group = entry[1];
       let scale = 1;
-      for (let i=0;i<12;i++) {
+
+      for (let i=0;i<16;i++) {
         apply(group, scale);
         const rr = rects(group);
+
         let collision = false;
         for (let a=0;a<rr.length && !collision;a++) {
           for (let b=a+1;b<rr.length;b++) {
-            if (overlaps(rr[a],rr[b],gap)) { collision=true; break; }
+            if (overlaps(rr[a],rr[b],gap)) {
+              collision = true;
+              break;
+            }
           }
         }
+
         const outside = rr.some(function(r){
-          return r.left < stageBox.left + 12 || r.right > stageBox.right - 12 || r.top < stageBox.top + 12 || r.bottom > stageBox.bottom - 12;
+          return r.left < stageBox.left + 10 ||
+                 r.right > stageBox.right - 10 ||
+                 r.top < stageBox.top + 10 ||
+                 r.bottom > stageBox.bottom - 10;
         });
 
-        if (collision) scale *= 1.1;
-        else if (outside && scale > 1) scale *= 0.96;
-        else break;
+        if (outside) {
+          /*
+           * Keep the complete menu inside the actual cover/stage.
+           * This is deliberately allowed to shrink below 1: the old
+           * implementation only enlarged rings and could leave nodes outside.
+           */
+          scale *= 0.88;
+        } else if (collision) {
+          scale *= 1.08;
+        } else {
+          break;
+        }
 
-        if (scale > (mobile ? 1.55 : 1.45)) break;
+        scale = Math.max(0.48, Math.min(scale, mobile ? 1.45 : 1.32));
       }
     });
 
