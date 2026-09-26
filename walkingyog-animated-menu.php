@@ -2,14 +2,14 @@
 /**
  * Plugin Name: WalkingYog Animated Space Menu
  * Description: Spatial animated WordPress menu with GIF/MP4 central media, calibrated face pivot, internal/external links and pointer/touch interaction.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Author: WalkingYog
  * Text Domain: walkingyog-animated-menu
  */
 
 defined('ABSPATH') || exit;
 
-define('WYA_MENU_VERSION', '0.1.1');
+define('WYA_MENU_VERSION', '0.2.0');
 define('WYA_MENU_FILE', __FILE__);
 define('WYA_MENU_URL', plugin_dir_url(__FILE__));
 define('WYA_MENU_PATH', plugin_dir_path(__FILE__));
@@ -30,19 +30,8 @@ final class WalkingYog_Animated_Menu {
     }
 
     public function register_assets(): void {
-        wp_register_style(
-            'wya-menu',
-            WYA_MENU_URL . 'assets/css/animated-menu.css',
-            [],
-            WYA_MENU_VERSION
-        );
-        wp_register_script(
-            'wya-menu',
-            WYA_MENU_URL . 'assets/js/animated-menu.js',
-            [],
-            WYA_MENU_VERSION,
-            true
-        );
+        wp_register_style('wya-menu', WYA_MENU_URL . 'assets/css/animated-menu.css', [], WYA_MENU_VERSION);
+        wp_register_script('wya-menu', WYA_MENU_URL . 'assets/js/animated-menu.js', [], WYA_MENU_VERSION, true);
     }
 
     public function admin_assets(string $hook): void {
@@ -50,6 +39,8 @@ final class WalkingYog_Animated_Menu {
             return;
         }
         wp_enqueue_style('wya-menu-admin', WYA_MENU_URL . 'assets/css/admin.css', [], WYA_MENU_VERSION);
+        wp_enqueue_media();
+        wp_enqueue_script('wya-menu-admin', WYA_MENU_URL . 'assets/js/admin.js', ['jquery'], WYA_MENU_VERSION, true);
     }
 
     public function render_shortcode(array $atts = []): string {
@@ -77,8 +68,6 @@ final class WalkingYog_Animated_Menu {
         }
 
         if (empty($settings['media']['url']) || empty($settings['items'])) {
-            // Keep the frontend completely clean until the menu is configured.
-            // The configuration hint belongs in wp-admin only.
             return '';
         }
 
@@ -126,9 +115,15 @@ final class WalkingYog_Animated_Menu {
                             href="<?php echo esc_url($item['url']); ?>"
                             target="<?php echo esc_attr($target); ?>"
                             <?php if ($rel): ?>rel="<?php echo esc_attr($rel); ?>"<?php endif; ?>
-                            data-x="<?php echo esc_attr((float) $item['x']); ?>"
-                            data-y="<?php echo esc_attr((float) $item['y']); ?>"
-                            data-z="<?php echo esc_attr((float) $item['z']); ?>"
+                            data-x="<?php echo esc_attr((float) ($item['x'] ?? 0)); ?>"
+                            data-y="<?php echo esc_attr((float) ($item['y'] ?? 0)); ?>"
+                            data-z="<?php echo esc_attr((float) ($item['z'] ?? 0)); ?>"
+                            data-orbit-radius="<?php echo esc_attr((float) ($item['orbit_radius'] ?? 0)); ?>"
+                            data-orbit-angle="<?php echo esc_attr((float) ($item['orbit_angle'] ?? 0)); ?>"
+                            data-orbit-speed="<?php echo esc_attr((float) ($item['orbit_speed'] ?? 0)); ?>"
+                            data-orbit-amplitude="<?php echo esc_attr((float) ($item['orbit_amplitude'] ?? 0)); ?>"
+                            data-phase="<?php echo esc_attr((float) ($item['phase'] ?? 0)); ?>"
+                            data-scale="<?php echo esc_attr((float) ($item['scale'] ?? 1)); ?>"
                             data-preview="<?php echo esc_url($preview); ?>"
                             data-external="<?php echo !empty($item['external']) ? '1' : '0'; ?>"
                         >
