@@ -9,11 +9,11 @@ final class WYA_Admin {
             'aria_label' => 'WalkingYog animated menu',
             'media' => ['url'=>'','id'=>0,'type'=>'gif','pivot_x'=>50,'pivot_y'=>50],
             'mount' => ['target_selector'=>'.cover','replace_target'=>1],
-            'scene' => ['head_desktop'=>320,'head_mobile'=>230,'stage_desktop'=>820,'stage_mobile'=>680],
+            'scene' => ['head_desktop'=>190,'head_mobile'=>145,'stage_desktop'=>0,'stage_mobile'=>0],
             'layout' => [
-                'mode'=>'side-balance','radius_desktop'=>350,'radius_mobile'=>205,
+                'mode'=>'side-balance','radius_desktop'=>225,'radius_mobile'=>155,
                 'ellipse_x'=>1.12,'ellipse_y'=>0.72,'start_angle'=>0,'arc_range'=>120,
-                'ring_gap'=>135,'item_size'=>58,'label_size'=>13,'label_width'=>140
+                'ring_gap'=>90,'item_size'=>48,'label_size'=>11,'label_width'=>112
             ],
             'lookat' => ['max_yaw'=>10,'max_pitch'=>6,'smoothing'=>0.14],
             'preview' => ['enabled'=>1,'width'=>210],
@@ -59,24 +59,24 @@ final class WYA_Admin {
         $out['mount']['target_selector'] = preg_match('/^[A-Za-z0-9_.#\-\s>\[\]="\':]+$/',$selector) ? $selector : '.cover';
         $out['mount']['replace_target'] = !empty($input['mount']['replace_target']) ? 1 : 0;
 
-        $out['scene']['head_desktop'] = max(180,min(520,(float)($input['scene']['head_desktop'] ?? 320)));
-        $out['scene']['head_mobile'] = max(140,min(340,(float)($input['scene']['head_mobile'] ?? 230)));
-        $out['scene']['stage_desktop'] = max(700,min(1600,(float)($input['scene']['stage_desktop'] ?? 820)));
-        $out['scene']['stage_mobile'] = max(520,min(900,(float)($input['scene']['stage_mobile'] ?? 680)));
+        $out['scene']['head_desktop'] = max(120,min(360,(float)($input['scene']['head_desktop'] ?? 190)));
+        $out['scene']['head_mobile'] = max(100,min(260,(float)($input['scene']['head_mobile'] ?? 145)));
+        $out['scene']['stage_desktop'] = 0;
+        $out['scene']['stage_mobile'] = 0;
 
         $mode = $input['layout']['mode'] ?? 'side-balance';
         $out['layout']['mode'] = in_array($mode,['side-balance','full-ring'],true) ? $mode : 'side-balance';
-        $out['layout']['radius_desktop'] = max(220,min(700,(float)($input['layout']['radius_desktop'] ?? 350)));
-        $out['layout']['radius_mobile'] = max(150,min(360,(float)($input['layout']['radius_mobile'] ?? 205)));
+        $out['layout']['radius_desktop'] = max(150,min(420,(float)($input['layout']['radius_desktop'] ?? 225)));
+        $out['layout']['radius_mobile'] = max(110,min(260,(float)($input['layout']['radius_mobile'] ?? 155)));
         $out['layout']['ellipse_x'] = max(0.8,min(1.7,(float)($input['layout']['ellipse_x'] ?? 1.12)));
         $out['layout']['ellipse_y'] = max(0.4,min(1.1,(float)($input['layout']['ellipse_y'] ?? 0.72)));
         $out['layout']['start_angle'] = fmod((float)($input['layout']['start_angle'] ?? 0),360);
         if ($out['layout']['start_angle'] < 0) $out['layout']['start_angle'] += 360;
         $out['layout']['arc_range'] = max(60,min(180,(float)($input['layout']['arc_range'] ?? 120)));
-        $out['layout']['ring_gap'] = max(90,min(240,(float)($input['layout']['ring_gap'] ?? 135)));
-        $out['layout']['item_size'] = max(44,min(92,(float)($input['layout']['item_size'] ?? 58)));
-        $out['layout']['label_size'] = max(10,min(22,(float)($input['layout']['label_size'] ?? 13)));
-        $out['layout']['label_width'] = max(90,min(240,(float)($input['layout']['label_width'] ?? 140)));
+        $out['layout']['ring_gap'] = max(60,min(160,(float)($input['layout']['ring_gap'] ?? 90)));
+        $out['layout']['item_size'] = max(38,min(72,(float)($input['layout']['item_size'] ?? 48)));
+        $out['layout']['label_size'] = max(9,min(18,(float)($input['layout']['label_size'] ?? 11)));
+        $out['layout']['label_width'] = max(70,min(180,(float)($input['layout']['label_width'] ?? 112)));
 
         $out['lookat']['max_yaw'] = max(0,min(18,(float)($input['lookat']['max_yaw'] ?? 10)));
         $out['lookat']['max_pitch'] = max(0,min(12,(float)($input['lookat']['max_pitch'] ?? 6)));
@@ -163,8 +163,7 @@ final class WYA_Admin {
                         <tr><th>Раскладка</th><td><select name="wya_menu_settings[layout][mode]"><option value="side-balance" <?php selected($s['layout']['mode'],'side-balance'); ?>>Боковые дуги</option><option value="full-ring" <?php selected($s['layout']['mode'],'full-ring'); ?>>Полное кольцо</option></select><p class="description">Боковые дуги оставляют верхнюю середину над головой свободной.</p></td></tr>
                         <tr><th>Размер головы desktop</th><td><?php echo self::field('wya_menu_settings[scene][head_desktop]',$s['scene']['head_desktop'],'number',['min'=>180,'max'=>520,'step'=>5]); ?> px</td></tr>
                         <tr><th>Размер головы mobile</th><td><?php echo self::field('wya_menu_settings[scene][head_mobile]',$s['scene']['head_mobile'],'number',['min'=>140,'max'=>340,'step'=>5]); ?> px</td></tr>
-                        <tr><th>Высота сцены desktop</th><td><?php echo self::field('wya_menu_settings[scene][stage_desktop]',$s['scene']['stage_desktop'],'number',['min'=>700,'max'=>1600,'step'=>10]); ?> px</td></tr>
-                        <tr><th>Высота сцены mobile</th><td><?php echo self::field('wya_menu_settings[scene][stage_mobile]',$s['scene']['stage_mobile'],'number',['min'=>520,'max'=>900,'step'=>10]); ?> px</td></tr>
+                        <tr><th>Высота сцены</th><td><strong>Размер контейнера .cover</strong><p class="description">При замене .cover плагин больше не задаёт свою высоту и не раздвигает страницу.</p></td></tr>
                         <tr><th>Радиус desktop</th><td><?php echo self::field('wya_menu_settings[layout][radius_desktop]',$s['layout']['radius_desktop'],'number',['min'=>220,'max'=>700,'step'=>5]); ?> px</td></tr>
                         <tr><th>Радиус mobile</th><td><?php echo self::field('wya_menu_settings[layout][radius_mobile]',$s['layout']['radius_mobile'],'number',['min'=>150,'max'=>360,'step'=>5]); ?> px</td></tr>
                         <tr><th>Эллипс X</th><td><?php echo self::field('wya_menu_settings[layout][ellipse_x]',$s['layout']['ellipse_x'],'number',['min'=>0.8,'max'=>1.7,'step'=>0.01]); ?> ×</td></tr>
