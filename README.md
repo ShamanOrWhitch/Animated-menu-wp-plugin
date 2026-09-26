@@ -2,7 +2,7 @@
 
 Standalone WordPress plugin for a spatial animated menu around one central GIF/PNG/MP4 visual.
 
-## Version 0.4.0
+## Version 0.4.1
 
 The public shortcode is unchanged:
 
