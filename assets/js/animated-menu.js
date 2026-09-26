@@ -21,19 +21,46 @@
 
     mediaWrap.style.transformOrigin = `${pivotX}% ${pivotY}%`;
 
-    items.forEach((item) => {
-      const x = parseFloat(item.dataset.x || '0');
-      const y = parseFloat(item.dataset.y || '0');
-      const z = parseFloat(item.dataset.z || '0');
+    const motionItems = items.map((item) => ({
+      item,
+      x: parseFloat(item.dataset.x || '0'),
+      y: parseFloat(item.dataset.y || '0'),
+      z: parseFloat(item.dataset.z || '0'),
+      orbitRadius: parseFloat(item.dataset.orbitRadius || '0'),
+      orbitAngle: parseFloat(item.dataset.orbitAngle || '0'),
+      orbitSpeed: parseFloat(item.dataset.orbitSpeed || '0'),
+      amplitude: parseFloat(item.dataset.orbitAmplitude || '0'),
+      phase: parseFloat(item.dataset.phase || '0'),
+      scale: parseFloat(item.dataset.scale || '1')
+    }));
+
+    motionItems.forEach(({ item, x, y, z, scale }) => {
       item.style.setProperty('--wya-x', `${x}%`);
       item.style.setProperty('--wya-y', `${y}%`);
       item.style.setProperty('--wya-z', `${z}px`);
+      item.style.setProperty('--wya-scale', scale);
     });
 
     let active = null;
     let lastTouchTime = 0;
+    let startTime = performance.now();
+    let raf = 0;
 
-    function aimAt(clientX, clientY, item) {
+    function animate(now) {
+      const elapsed = (now - startTime) / 1000;
+      motionItems.forEach((m) => {
+        const a = (m.orbitAngle + m.phase) * Math.PI / 180 + elapsed * m.orbitSpeed * Math.PI * 2;
+        const ox = Math.cos(a) * m.orbitRadius;
+        const oy = Math.sin(a) * m.orbitRadius;
+        const bob = m.amplitude ? Math.sin(a * 2) * m.amplitude : 0;
+        m.item.style.setProperty('--wya-x', `${(m.x + ox).toFixed(3)}%`);
+        m.item.style.setProperty('--wya-y', `${(m.y + oy + bob).toFixed(3)}%`);
+      });
+      raf = requestAnimationFrame(animate);
+    }
+    raf = requestAnimationFrame(animate);
+
+    function aimAt(clientX, clientY) {
       const rect = stage.getBoundingClientRect();
       const cx = rect.left + rect.width * (pivotX / 100);
       const cy = rect.top + rect.height * (pivotY / 100);
@@ -47,18 +74,13 @@
       mediaWrap.style.transform = `rotate(${tilt.toFixed(2)}deg) translate(${(-lift * 0.45).toFixed(2)}px, ${(lift * 0.25).toFixed(2)}px)`;
       root.style.setProperty('--wya-pointer-x', `${clientX - rect.left}px`);
       root.style.setProperty('--wya-pointer-y', `${clientY - rect.top}px`);
-
-      if (item) {
-        item.classList.add('is-focused');
-        item.style.setProperty('--wya-distance', `${dist.toFixed(1)}px`);
-      }
     }
 
     function focusItem(item, pointerEvent) {
       if (!item) return;
       if (active && active !== item) active.classList.remove('is-focused', 'is-previewing');
       active = item;
-      aimAt(pointerEvent.clientX, pointerEvent.clientY, item);
+      aimAt(pointerEvent.clientX, pointerEvent.clientY);
       item.classList.add('is-focused');
       status.textContent = item.querySelector('.wya-menu__item-title')?.textContent || '';
 
@@ -86,7 +108,6 @@
     root.addEventListener('pointermove', (event) => {
       let closest = null;
       let closestDistance = Infinity;
-      const rect = stage.getBoundingClientRect();
       items.forEach((item) => {
         const ir = item.getBoundingClientRect();
         const ix = ir.left + ir.width / 2;
@@ -115,20 +136,11 @@
         const isSecondTap = active === item && (now - lastTouchTime) < 850;
         lastTouchTime = now;
         focusItem(item, event);
-        if (isSecondTap) return;
-        event.preventDefault();
-      });
-
-      item.addEventListener('click', (event) => {
-        if (event.detail > 1) return;
-        if (event.pointerType === 'touch') {
-          if (active !== item) {
-            event.preventDefault();
-            return;
-          }
-        }
+        if (!isSecondTap) event.preventDefault();
       });
     });
+
+    root.addEventListener('remove', () => cancelAnimationFrame(raf));
   }
 
   document.querySelectorAll('.wya-menu').forEach(init);
