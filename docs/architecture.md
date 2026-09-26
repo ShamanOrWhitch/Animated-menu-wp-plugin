@@ -2,11 +2,11 @@
 
 ## 1. Public HTML first
 
-Every menu node is a real `<a href>` element. The animated layer enhances the navigation but does not replace the underlying links.
+Every menu node is a real <a href> element. The animated layer enhances the navigation but does not replace the underlying links.
 
 ## 2. Central visual pivot
 
-The image/video can be visually off-center. `pivot_x` and `pivot_y` define the logical focal point (for the head, normally around the eyes). CSS `transform-origin` is set to this point.
+The image/video can be visually off-center. pivot_x and pivot_y define the logical focal point (for the head, normally around the eyes). CSS transform-origin is set to this point.
 
 ## 3. Desktop
 
@@ -22,4 +22,4 @@ The future 3D layer must use the project's fixed Three.js r128 build bundled ins
 
 ## 6. Development pages
 
-A future visibility module should allow each node/page to be `public`, `development`, or `hidden`. Development pages should not be advertised through the public menu and should emit appropriate robots directives when configured. This is separate from merely using `display:none`.
+A future visibility module should allow each node/page to be public, development, or hidden. Development pages should not be advertised through the public menu and should emit appropriate robots directives when configured. This is separate from merely using display:none.
