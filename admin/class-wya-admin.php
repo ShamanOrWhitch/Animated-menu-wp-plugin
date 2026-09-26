@@ -3,6 +3,7 @@ defined('ABSPATH') || exit;
 
 final class WYA_Admin {
     private const OPTION = 'wya_menu_settings';
+    private const GEOMETRY_MARKER = 'wya_menu_geometry_v2';
 
     public static function defaults(): array {
         return [
@@ -22,8 +23,24 @@ final class WYA_Admin {
     }
 
     public static function get_settings(): array {
+        $defaults = self::defaults();
         $saved = get_option(self::OPTION, []);
-        return array_replace_recursive(self::defaults(), is_array($saved) ? $saved : []);
+        $settings = array_replace_recursive($defaults, is_array($saved) ? $saved : []);
+
+        /*
+         * 0.4.0 accidentally allowed its scene defaults to become much larger
+         * than the original .cover. On the first 0.4.1 read, preserve media,
+         * Pivot and menu items, but replace only the geometry with the compact
+         * replacement-scene defaults.
+         */
+        if (get_option(self::GEOMETRY_MARKER, '') !== '1') {
+            $settings['mount'] = $defaults['mount'];
+            $settings['scene'] = $defaults['scene'];
+            $settings['layout'] = $defaults['layout'];
+            update_option(self::GEOMETRY_MARKER, '1', false);
+        }
+
+        return $settings;
     }
 
     public static function init(): void {
