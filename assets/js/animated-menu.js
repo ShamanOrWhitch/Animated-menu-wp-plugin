@@ -89,8 +89,8 @@
 
     function sceneMetrics() {
       const mobile = window.matchMedia('(max-width:900px)').matches;
-      root.style.setProperty('--wya-head-size',(parseFloat(root.dataset[mobile?'headMobile':'headDesktop'])||230)+'px');
-      root.style.setProperty('--wya-stage-height',(parseFloat(root.dataset[mobile?'stageMobile':'stageDesktop'])||680)+'px');
+      root.style.setProperty('--wya-head-size',(parseFloat(root.dataset[mobile?'headMobile':'headDesktop'])||145)+'px');
+      root.style.setProperty('--wya-stage-height','100%');
     }
 
     let active = null, targetYaw = 0, targetPitch = 0, yaw = 0, pitch = 0;
