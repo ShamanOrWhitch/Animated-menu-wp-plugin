@@ -1,0 +1,62 @@
+{
+  "media": {
+    "url": "https://walkingyog.com/wp-content/uploads/example/head.gif",
+    "type": "gif",
+    "pivot_x": 50,
+    "pivot_y": 42
+  },
+  "interaction": {
+    "hover_radius": 180,
+    "max_tilt": 7
+  },
+  "items": [
+    {
+      "title": "BCM4SA",
+      "url": "/bcm4sa/",
+      "description": "Space project",
+      "preview": "https://walkingyog.com/wp-content/uploads/example/bcm4sa-preview.mp4",
+      "external": 0,
+      "new_tab": 0,
+      "enabled": 1,
+      "x": -26,
+      "y": -24,
+      "z": 20
+    },
+    {
+      "title": "Creative Lab",
+      "url": "/creative-lab/",
+      "description": "Experiments",
+      "preview": "https://walkingyog.com/wp-content/uploads/example/creative-preview.mp4",
+      "external": 0,
+      "new_tab": 0,
+      "enabled": 1,
+      "x": 27,
+      "y": -16,
+      "z": 10
+    },
+    {
+      "title": "Jah Tales",
+      "url": "/jah-tales/",
+      "description": "Stories",
+      "preview": "",
+      "external": 0,
+      "new_tab": 0,
+      "enabled": 1,
+      "x": -30,
+      "y": 25,
+      "z": 0
+    },
+    {
+      "title": "External project",
+      "url": "https://example.com/",
+      "description": "External link",
+      "preview": "",
+      "external": 1,
+      "new_tab": 1,
+      "enabled": 1,
+      "x": 31,
+      "y": 25,
+      "z": 5
+    }
+  ]
+}
