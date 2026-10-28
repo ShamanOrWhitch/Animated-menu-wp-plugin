@@ -77,9 +77,9 @@
 
     const pivotX = parseFloat(root.dataset.pivotX || '50');
     const pivotY = parseFloat(root.dataset.pivotY || '50');
-    const yawMax = parseFloat(root.dataset.maxYaw || '10');
-    const pitchMax = parseFloat(root.dataset.maxPitch || '6');
-    const smoothing = parseFloat(root.dataset.lookatSmoothing || '0.14');
+    const yawMax = parseFloat(root.dataset.maxYaw || '18');
+    const pitchMax = parseFloat(root.dataset.maxPitch || '12');
+    const smoothing = parseFloat(root.dataset.lookatSmoothing || '0.12');
 
     root.style.setProperty('--wya-pivot-x',pivotX+'%');
     root.style.setProperty('--wya-pivot-y',pivotY+'%');
@@ -100,6 +100,19 @@
 
     let active = null, targetYaw = 0, targetPitch = 0, yaw = 0, pitch = 0;
     let lastTouchItem = null, lastTouchTime = 0, suppressUntil = 0;
+    let mouseInStage = false;
+    let mouseX = 0, mouseY = 0;
+
+    function setLookFromMouse() {
+      if (!mouseInStage) return;
+      const sr = stage.getBoundingClientRect();
+      const px = sr.left + sr.width * pivotX / 100;
+      const py = sr.top + sr.height * pivotY / 100;
+      const dx = (mouseX - px) / (sr.width * 0.42);
+      const dy = (mouseY - py) / (sr.height * 0.42);
+      targetYaw = clamp(dx * yawMax, -yawMax, yawMax);
+      targetPitch = clamp(dy * pitchMax, -pitchMax, pitchMax);
+    }
 
     function focus(item) {
       active = item;
@@ -118,11 +131,35 @@
     }
 
     function clear() {
-      active = null; targetYaw = 0; targetPitch = 0;
+      active = null; 
+      if (!mouseInStage) {
+        targetYaw = 0; targetPitch = 0;
+      }
       items.forEach(function(x){x.classList.remove('is-focused');});
       if (status) status.textContent = '';
       preview(root,null);
     }
+
+    // Mouse tracking for natural head follow
+    stage.addEventListener('pointermove', function(e) {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      mouseInStage = true;
+      if (!active) setLookFromMouse();
+    });
+
+    stage.addEventListener('pointerenter', function() {
+      mouseInStage = true;
+    });
+
+    stage.addEventListener('pointerleave', function(e) {
+      mouseInStage = false;
+      if (!active) {
+        targetYaw = 0;
+        targetPitch = 0;
+      }
+      if (e.pointerType !== 'touch') clear();
+    });
 
     items.forEach(function(item){
       item.addEventListener('pointerenter',function(e){
@@ -151,7 +188,10 @@
         }
       });
       item.addEventListener('pointerleave',function(e){
-        if (e.pointerType !== 'touch' && active === item) clear();
+        if (e.pointerType !== 'touch' && active === item) {
+          clear();
+          if (mouseInStage) setLookFromMouse();
+        }
       });
     });
 
