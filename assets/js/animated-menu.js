@@ -18,7 +18,12 @@
 
     target.classList.add('wya-menu-host');
     target.style.setProperty('background-image','none','important');
-    target.style.setProperty('overflow','visible','important');
+    target.style.setProperty('position','relative','important');
+    target.style.setProperty('width','min(960px, 100%)','important');
+    target.style.setProperty('height','min(68vh, 620px)','important');
+    target.style.setProperty('min-height','420px','important');
+    target.style.setProperty('overflow','hidden','important');
+    target.style.setProperty('margin','12px auto 20px','important');
     if (target.getAttribute('role') === 'img') target.removeAttribute('role');
   }
 
@@ -77,8 +82,8 @@
 
     const pivotX = parseFloat(root.dataset.pivotX || '50');
     const pivotY = parseFloat(root.dataset.pivotY || '50');
-    const yawMax = parseFloat(root.dataset.maxYaw || '18');
-    const pitchMax = parseFloat(root.dataset.maxPitch || '12');
+    const yawMax = Math.max(24, parseFloat(root.dataset.maxYaw || '24'));
+    const pitchMax = Math.max(16, parseFloat(root.dataset.maxPitch || '16'));
     const smoothing = parseFloat(root.dataset.lookatSmoothing || '0.12');
 
     root.style.setProperty('--wya-pivot-x',pivotX+'%');
@@ -89,9 +94,9 @@
 
     function sceneMetrics() {
       const mobile = window.matchMedia('(max-width:900px)').matches;
-      const wanted = parseFloat(root.dataset[mobile ? 'headMobile' : 'headDesktop']) || 145;
-      const availableWidth = Math.max(80, stage.clientWidth * 0.50);
-      const availableHeight = Math.max(80, stage.clientHeight * 0.72);
+      const wanted = Math.max(200, parseFloat(root.dataset[mobile ? 'headMobile' : 'headDesktop']) || 200);
+      const availableWidth = Math.max(80, stage.clientWidth * 0.42);
+      const availableHeight = Math.max(80, stage.clientHeight * 0.62);
       const actual = Math.min(wanted, availableWidth, availableHeight);
 
       root.style.setProperty('--wya-head-size', actual.toFixed(1) + 'px');
@@ -100,16 +105,15 @@
 
     let active = null, targetYaw = 0, targetPitch = 0, yaw = 0, pitch = 0;
     let lastTouchItem = null, lastTouchTime = 0, suppressUntil = 0;
-    let mouseInStage = false;
-    let mouseX = 0, mouseY = 0;
+    let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
 
     function setLookFromMouse() {
-      if (!mouseInStage) return;
       const sr = stage.getBoundingClientRect();
+      if (!sr.width || !sr.height) return;
       const px = sr.left + sr.width * pivotX / 100;
       const py = sr.top + sr.height * pivotY / 100;
-      const dx = (mouseX - px) / (sr.width * 0.42);
-      const dy = (mouseY - py) / (sr.height * 0.42);
+      const dx = (mouseX - px) / (sr.width * 0.38);
+      const dy = (mouseY - py) / (sr.height * 0.38);
       targetYaw = clamp(dx * yawMax, -yawMax, yawMax);
       targetPitch = clamp(dy * pitchMax, -pitchMax, pitchMax);
     }
@@ -122,8 +126,8 @@
       const sr = stage.getBoundingClientRect(), ir = item.getBoundingClientRect();
       const px = sr.left + sr.width * pivotX / 100;
       const py = sr.top + sr.height * pivotY / 100;
-      targetYaw = clamp((ir.left + ir.width/2 - px) / (sr.width * .42) * yawMax,-yawMax,yawMax);
-      targetPitch = clamp((ir.top + ir.height/2 - py) / (sr.height * .42) * pitchMax,-pitchMax,pitchMax);
+      targetYaw = clamp((ir.left + ir.width/2 - px) / (sr.width * .38) * yawMax,-yawMax,yawMax);
+      targetPitch = clamp((ir.top + ir.height/2 - py) / (sr.height * .38) * pitchMax,-pitchMax,pitchMax);
 
       const title = item.querySelector('.wya-menu__item-title');
       if (status) status.textContent = title ? title.textContent : '';
@@ -131,37 +135,21 @@
     }
 
     function clear() {
-      active = null; 
-      if (!mouseInStage) {
-        targetYaw = 0; targetPitch = 0;
-      }
+      active = null;
       items.forEach(function(x){x.classList.remove('is-focused');});
       if (status) status.textContent = '';
       preview(root,null);
+      setLookFromMouse();
     }
 
-    // Mouse tracking for natural head follow
-    stage.addEventListener('pointermove', function(e) {
+    window.addEventListener('pointermove', function(e) {
       mouseX = e.clientX;
       mouseY = e.clientY;
-      mouseInStage = true;
       if (!active) setLookFromMouse();
-    });
+    }, {passive:true});
 
-    stage.addEventListener('pointerenter', function() {
-      mouseInStage = true;
-    });
-
-    stage.addEventListener('pointerleave', function(e) {
-      mouseInStage = false;
-      if (!active) {
-        targetYaw = 0;
-        targetPitch = 0;
-      }
-      if (e.pointerType !== 'touch') clear();
-    });
-
-    items.forEach(function(item){
+    items.forEach(function(item, index){
+      item.dataset.floatI = String(index);
       item.addEventListener('pointerenter',function(e){
         if (e.pointerType !== 'touch') focus(item);
       });
@@ -188,28 +176,39 @@
         }
       });
       item.addEventListener('pointerleave',function(e){
-        if (e.pointerType !== 'touch' && active === item) {
-          clear();
-          if (mouseInStage) setLookFromMouse();
-        }
+        if (e.pointerType !== 'touch' && active === item) clear();
       });
     });
 
-    root.addEventListener('pointerleave',function(e){
-      if (e.pointerType !== 'touch') clear();
-    });
+    function cacheBases() {
+      items.forEach(function(item){
+        item.dataset.baseX = item.style.getPropertyValue('--wya-x') || '0px';
+        item.dataset.baseY = item.style.getPropertyValue('--wya-y') || '0px';
+      });
+    }
 
     function loop() {
       yaw += (targetYaw-yaw)*smoothing;
       pitch += (targetPitch-pitch)*smoothing;
       wrap.style.setProperty('--wya-yaw',yaw.toFixed(2)+'deg');
       wrap.style.setProperty('--wya-pitch',(-pitch).toFixed(2)+'deg');
+      const t = performance.now() / 1000;
+      items.forEach(function(item){
+        const i = parseInt(item.dataset.floatI || '0', 10);
+        const bx = parseFloat(item.dataset.baseX || '0');
+        const by = parseFloat(item.dataset.baseY || '0');
+        const ox = Math.sin(t * 0.65 + i * 0.9) * 14;
+        const oy = Math.cos(t * 0.5 + i * 0.7) * 10;
+        item.style.setProperty('--wya-x', (bx + ox).toFixed(2) + 'px');
+        item.style.setProperty('--wya-y', (by + oy).toFixed(2) + 'px');
+      });
       requestAnimationFrame(loop);
     }
 
     function relayout() {
       sceneMetrics();
       if (window.WYARadialLayout) window.WYARadialLayout.layout(root);
+      cacheBases();
       if (active) requestAnimationFrame(function(){focus(active);});
     }
 
