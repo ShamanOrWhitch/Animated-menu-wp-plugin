@@ -19,11 +19,9 @@
     target.classList.add('wya-menu-host');
     target.style.setProperty('background-image','none','important');
     target.style.setProperty('position','relative','important');
-    target.style.setProperty('width','min(960px, 100%)','important');
-    target.style.setProperty('height','min(68vh, 620px)','important');
-    target.style.setProperty('min-height','420px','important');
-    target.style.setProperty('overflow','hidden','important');
-    target.style.setProperty('margin','12px auto 20px','important');
+    target.style.setProperty('overflow','visible','important');
+    target.style.setProperty('width','180px','important');
+    target.style.setProperty('height','180px','important');
     if (target.getAttribute('role') === 'img') target.removeAttribute('role');
   }
 
@@ -82,8 +80,8 @@
 
     const pivotX = parseFloat(root.dataset.pivotX || '50');
     const pivotY = parseFloat(root.dataset.pivotY || '50');
-    const yawMax = Math.max(24, parseFloat(root.dataset.maxYaw || '24'));
-    const pitchMax = Math.max(16, parseFloat(root.dataset.maxPitch || '16'));
+    const yawMax = Math.max(0, parseFloat(root.dataset.maxYaw || '12'));
+    const pitchMax = Math.max(0, parseFloat(root.dataset.maxPitch || '8'));
     const smoothing = parseFloat(root.dataset.lookatSmoothing || '0.12');
 
     root.style.setProperty('--wya-pivot-x',pivotX+'%');
@@ -94,10 +92,11 @@
 
     function sceneMetrics() {
       const mobile = window.matchMedia('(max-width:900px)').matches;
-      const wanted = Math.max(200, parseFloat(root.dataset[mobile ? 'headMobile' : 'headDesktop']) || 200);
-      const availableWidth = Math.max(80, stage.clientWidth * 0.42);
-      const availableHeight = Math.max(80, stage.clientHeight * 0.62);
-      const actual = Math.min(wanted, availableWidth, availableHeight);
+      const raw = parseFloat(root.dataset[mobile ? 'headMobile' : 'headDesktop']);
+      const wanted = raw > 0 ? raw : (mobile ? 120 : 150);
+      const side = Math.min(stage.clientWidth || 180, stage.clientHeight || 180);
+      const cap = Math.max(96, side * 0.86);
+      const actual = Math.max(96, Math.min(wanted, cap));
 
       root.style.setProperty('--wya-head-size', actual.toFixed(1) + 'px');
       root.style.setProperty('--wya-stage-height','100%');
@@ -197,8 +196,8 @@
         const i = parseInt(item.dataset.floatI || '0', 10);
         const bx = parseFloat(item.dataset.baseX || '0');
         const by = parseFloat(item.dataset.baseY || '0');
-        const ox = Math.sin(t * 0.65 + i * 0.9) * 14;
-        const oy = Math.cos(t * 0.5 + i * 0.7) * 10;
+        const ox = Math.sin(t * 0.65 + i * 0.9) * 5;
+        const oy = Math.cos(t * 0.5 + i * 0.7) * 4;
         item.style.setProperty('--wya-x', (bx + ox).toFixed(2) + 'px');
         item.style.setProperty('--wya-y', (by + oy).toFixed(2) + 'px');
       });

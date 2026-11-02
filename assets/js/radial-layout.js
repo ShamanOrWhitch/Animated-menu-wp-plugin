@@ -22,15 +22,20 @@
     if (!stage || !items.length) return;
 
     const mobile = window.matchMedia('(max-width:900px)').matches;
-    const base = parseFloat(root.dataset[mobile ? 'radiusMobile' : 'radiusDesktop']) || 205;
-    const ex = parseFloat(root.dataset.ellipseX) || 1.12;
-    const ey = parseFloat(root.dataset.ellipseY) || 0.72;
-    const start = parseFloat(root.dataset.startAngle) || 0;
-    const arc = parseFloat(root.dataset.arcRange) || 120;
-    const gap = 10;
-    const ringGap = parseFloat(root.dataset.ringGap) || 135;
-    const mode = root.dataset.layoutMode || 'side-balance';
     const stageBox = stage.getBoundingClientRect();
+    const configured = parseFloat(root.dataset[mobile ? 'radiusMobile' : 'radiusDesktop']) || (mobile ? 108 : 148);
+    const headPx = parseFloat(getComputedStyle(root).getPropertyValue('--wya-head-size')) || 150;
+    const nearHead = headPx * 0.52 + 10;
+    const stageLimit = Math.min(stageBox.width, stageBox.height) * 0.62;
+    const cap = Math.max(56, Math.min(nearHead, stageLimit || nearHead));
+    const base = Math.max(56, Math.min(configured, cap));
+    const ex = parseFloat(root.dataset.ellipseX) || 1.05;
+    const ey = parseFloat(root.dataset.ellipseY) || 0.78;
+    const start = parseFloat(root.dataset.startAngle) || 0;
+    const arc = parseFloat(root.dataset.arcRange) || 110;
+    const gap = 8;
+    const ringGap = Math.min(parseFloat(root.dataset.ringGap) || 72, Math.max(40, base * 0.5));
+    const mode = root.dataset.layoutMode || 'side-balance';
 
     const rings = new Map();
     items.slice().sort(function(a,b){
@@ -115,7 +120,7 @@
           break;
         }
 
-        scale = Math.max(0.48, Math.min(scale, mobile ? 1.45 : 1.32));
+        scale = Math.max(0.42, Math.min(scale, 1));
       }
     });
 
